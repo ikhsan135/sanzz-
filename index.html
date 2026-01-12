@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sanzz™ - File Browser</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: #0f0f0f;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background: #0f0f0f;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            border-bottom: 1px solid #303030;
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #ff0000;
+            text-decoration: none;
+        }
+
+        .logo span {
+            font-family: 'Roboto', sans-serif;
+            letter-spacing: -0.5px;
+        }
+
+        .logo .tm {
+            font-size: 10px;
+            vertical-align: super;
+            color: #aaa;
+        }
+
+        .search-container {
+            display: flex;
+            width: 50%;
+            max-width: 600px;
+        }
+
+        .search-box {
+            flex: 1;
+            height: 40px;
+            padding: 0 16px;
+            background: #121212;
+            border: 1px solid #303030;
+            border-right: none;
+            border-radius: 20px 0 0 20px;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .search-box:focus {
+            border-color: #1c62b9;
+        }
+
+        .search-btn {
+            width: 64px;
+            background: #222;
+            border: 1px solid #303030;
+            border-left: none;
+            border-radius: 0 20px 20px 0;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-btn:hover {
+            background: #333;
+        }
+
+        .watermark {
+            color: #aaa;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 56px;
+            padding: 20px;
+        }
+
+        .page-title {
+            font-size: 22px;
+            margin-bottom: 20px;
+            padding-left: 4px;
+        }
+
+        /* File Grid */
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+            padding: 0 8px;
+        }
+
+        @media (max-width: 768px) {
+            .files-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+        }
+
+        @media (max-width: 480px) {
+            .files-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* File Card */
+        .file-card {
+            background: #1f1f1f;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            position: relative;
+        }
+
+        .file-card:hover {
+            transform: translateY(-4px);
+            background: #262626;
+        }
+
+        .thumbnail-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            background: #000;
+            overflow: hidden;
+        }
+
+        .thumbnail {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-thumbnail {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-thumbnail video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .file-type {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .duration {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .file-info {
+            padding: 12px;
+        }
+
+        .file-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.4;
+            color: #fff;
+        }
+
+        .file-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #aaa;
+        }
+
+        .file-size {
+            font-size: 12px;
+        }
+
+        .no-files {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: #aaa;
+        }
+
+        .no-files i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .loading {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: #aaa;
+        }
+
+        .loading i {
+            font-size: 32px;
+            margin-bottom: 16px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1f1f1f;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #303030;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .close-modal:hover {
+            background: #333;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .preview-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .preview-media {
+            max-width: 100%;
+            max-height: 60vh;
+            border-radius: 8px;
+            background: #000;
+        }
+
+        .file-details {
+            background: #181818;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .file-details h3 {
+            margin-bottom: 16px;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .detail-item {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .detail-label {
+            width: 100px;
+            color: #aaa;
+        }
+
+        .detail-value {
+            flex: 1;
+            color: #fff;
+            word-break: break-all;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            border-top: 1px solid #303030;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1f1f1f;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        /* Video player custom */
+        video::-webkit-media-controls {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Loading animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fa-spin {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #aaa;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            max-width: 400px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <a href="#" class="logo">
+            <i class="fab fa-youtube"></i>
+            <span>sanzz<span class="tm">™</span></span>
+        </a>
+        
+        <div class="search-container">
+            <input type="text" id="searchInput" class="search-box" placeholder="Cari file...">
+            <button id="searchButton" class="search-btn">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+        
+        <div class="watermark">Ikhsan-Project</div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <h1 class="page-title">File Browser</h1>
+        
+        <div class="files-grid" id="filesGrid">
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading files...</p>
+            </div>
+        </div>
+
+        <!-- Preview Modal -->
+        <div class="modal" id="previewModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="modalTitle"></h2>
+                    <button class="close-modal" id="closeModal">&times;</button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Preview content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>© 2026 Sanzz™ File Browser | Ikhsan-Project</p>
+        <p>you can download the video here</p>
+    </footer>
+
+    <script>
+        // Data file akan disimpan di sini
+        let allFiles = [];
+        let filteredFiles = [];
+
+        // Elemen DOM
+        const filesGrid = document.getElementById('filesGrid');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const previewModal = document.getElementById('previewModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const closeModal = document.getElementById('closeModal');
+
+        // Ekstensi file yang didukung
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+        const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
+
+        // Fungsi untuk mengambil semua file dari folder /data/
+        async function loadFiles() {
+            try {
+                filesGrid.innerHTML = `
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading files...</p>
+                    </div>
+                `;
+
+                // Untuk GitHub Pages, kita butuh file list.json
+                // Tapi karena ini statis, kita akan simulasi file yang ada
+                
+                // Simulasi: Ambil dari data folder yang sudah diketahui
+                // Di implementasi nyata, Anda perlu membuat file list.json
+                // yang berisi daftar file di folder /data/
+                
+                // Contoh file default (akan diganti dengan file yang ada)
+                const defaultFiles = [
+                    {
+                        name: "contoh-video.mp4",
+                        path: "data/contoh-video.mp4",
+                        size: 5242880, // 5MB
+                        type: "video",
+                        extension: ".mp4"
+                    },
+                    {
+                        name: "contoh-gambar.jpg",
+                        path: "data/contoh-gambar.jpg",
+                        size: 1048576, // 1MB
+                        type: "image",
+                        extension: ".jpg"
+                    }
+                ];
+
+                // Coba ambil file list.json jika ada
+                try {
+                    const response = await fetch('list.json');
+                    if (response.ok) {
+                        allFiles = await response.json();
+                    } else {
+                        allFiles = await scanDataFolder();
+                    }
+                } catch (error) {
+                    console.log('Menggunakan scan manual...');
+                    allFiles = await scanDataFolder();
+                }
+
+                // Jika tidak ada file, gunakan default
+                if (!allFiles || allFiles.length === 0) {
+                    allFiles = defaultFiles;
+                }
+
+                filteredFiles = [...allFiles];
+                renderFiles();
+                
+            } catch (error) {
+                console.error('Error loading files:', error);
+                filesGrid.innerHTML = `
+                    <div class="no-files">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Gagal memuat file</h3>
+                        <p>Pastikan folder /data/ berisi file media (gambar/video)</p>
+                        <p style="margin-top: 20px; color: #888;">
+                            Untuk GitHub Pages, buat file list.json yang berisi daftar file
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
+        // Fungsi untuk scan folder /data/ secara manual
+        async function scanDataFolder() {
+            const files = [];
+            
+            // Ini hanya simulasi - di implementasi nyata,
+            // Anda perlu server-side script untuk generate list.json
+            // atau menggunakan GitHub API
+            
+            // Untuk demo, kita coba fetch beberapa file yang mungkin ada
+            const testFiles = [
+                'cewe-ytta.mp4'
+            ];
+            
+            for (const filename of testFiles) {
+                const filePath = `data/${filename}`;
+                const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase();
+                
+                if (imageExtensions.includes(ext) || videoExtensions.includes(ext)) {
+                    files.push({
+                        name: filename,
+                        path: filePath,
+                        size: 0, // Tidak bisa mendapatkan size tanpa server
+                        type: imageExtensions.includes(ext) ? 'image' : 'video',
+                        extension: ext
+                    });
+                }
+            }
+            
+            return files;
+        }
+
+        // Fungsi untuk render file ke grid
+        function renderFiles() {
+            if (filteredFiles.length === 0) {
+                filesGrid.innerHTML = `
+                    <div class="no-files">
+                        <i class="fas fa-folder-open"></i>
+                        <h3>Tidak ada file ditemukan</h3>
+                        <p>Coba kata kunci pencarian lain atau pastikan folder /data/ berisi file</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filesGrid.innerHTML = '';
+
+            filteredFiles.forEach(file => {
+                const fileCard = createFileCard(file);
+                filesGrid.appendChild(fileCard);
+            });
+        }
+
+        // Fungsi untuk membuat kartu file
+        function createFileCard(file) {
+            const card = document.createElement('div');
+            card.className = 'file-card';
+            card.setAttribute('data-name', file.name);
+            
+            const fileName = file.name;
+            const fileExt = file.extension.toLowerCase();
+            const fileType = file.type;
+            const fileSize = formatFileSize(file.size);
+            
+            // Buat thumbnail HTML
+            let thumbnailHTML = '';
+            let typeBadge = fileType === 'video' ? 'VIDEO' : 'GAMBAR';
+            
+            if (fileType === 'video') {
+                thumbnailHTML = `
+                    <div class="video-thumbnail">
+                        <video muted playsinline preload="metadata">
+                            <source src="${file.path}" type="video/mp4">
+                        </video>
+                    </div>
+                `;
+            } else {
+                thumbnailHTML = `
+                    <div class="image-thumbnail">
+                        <img src="${file.path}" alt="${fileName}" loading="lazy">
+                    </div>
+                `;
+            }
+            
+            // Format judul (hapus ekstensi)
+            const title = fileName.substring(0, fileName.lastIndexOf('.'));
+            
+            card.innerHTML = `
+                <div class="thumbnail-container">
+                    ${thumbnailHTML}
+                    <div class="file-type">${typeBadge}</div>
+                    ${fileType === 'video' ? '<div class="duration">VIDEO</div>' : ''}
+                </div>
+                <div class="file-info">
+                    <div class="file-title" title="${title}">${truncateText(title, 60)}</div>
+                    <div class="file-meta">
+                        <span>${fileExt.toUpperCase()}</span>
+                        <span class="file-size">${fileSize}</span>
+                    </div>
+                </div>
+            `;
+            
+            // Event listener untuk preview
+            card.addEventListener('click', () => showPreview(file));
+            
+            // Hover effect untuk video thumbnail
+            if (fileType === 'video') {
+                const video = card.querySelector('video');
+                card.addEventListener('mouseenter', () => {
+                    if (video) video.play();
+                });
+                card.addEventListener('mouseleave', () => {
+                    if (video) {
+                        video.pause();
+                        video.currentTime = 0;
+                    }
+                });
+            }
+            
+            return card;
+        }
+
+        // Fungsi untuk menampilkan preview file
+        function showPreview(file) {
+            modalTitle.textContent = file.name.substring(0, file.name.lastIndexOf('.'));
+            
+            let previewHTML = '';
+            
+            if (file.type === 'video') {
+                previewHTML = `
+                    <div class="preview-container">
+                        <video class="preview-media" controls autoplay>
+                            <source src="${file.path}" type="video/mp4">
+                            Browser tidak mendukung pemutar video.
+                        </video>
+                    </div>
+                `;
+            } else {
+                previewHTML = `
+                    <div class="preview-container">
+                        <img class="preview-media" src="${file.path}" alt="${file.name}">
+                    </div>
+                `;
+            }
+            
+            // Tambahkan detail file
+            previewHTML += `
+                <div class="file-details">
+                    <h3>Detail File</h3>
+                    <div class="detail-item">
+                        <div class="detail-label">Nama:</div>
+                        <div class="detail-value">${file.name}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Tipe:</div>
+                        <div class="detail-value">${file.type === 'video' ? 'Video' : 'Gambar'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Ekstensi:</div>
+                        <div class="detail-value">${file.extension.toUpperCase()}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Ukuran:</div>
+                        <div class="detail-value">${formatFileSize(file.size)}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Path:</div>
+                        <div class="detail-value">${file.path}</div>
+                    </div>
+                </div>
+            `;
+            
+            modalBody.innerHTML = previewHTML;
+            previewModal.classList.add('active');
+            
+            // Pause video saat modal ditutup
+            const video = modalBody.querySelector('video');
+            if (video) {
+                previewModal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        video.pause();
+                    }
+                });
+            }
+        }
+
+        // Fungsi untuk mencari file
+        function searchFiles() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            if (searchTerm === '') {
+                filteredFiles = [...allFiles];
+            } else {
+                filteredFiles = allFiles.filter(file => {
+                    const fileName = file.name.toLowerCase();
+                    return fileName.includes(searchTerm);
+                });
+            }
+            
+            renderFiles();
+        }
+
+        // Helper functions
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function truncateText(text, maxLength) {
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', loadFiles);
+
+        searchButton.addEventListener('click', searchFiles);
+        
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchFiles();
+        });
+
+        closeModal.addEventListener('click', () => {
+            previewModal.classList.remove('active');
+            // Pause video di modal
+            const video = modalBody.querySelector('video');
+            if (video) video.pause();
+        });
+
+        // Close modal dengan ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && previewModal.classList.contains('active')) {
+                previewModal.classList.remove('active');
+                const video = modalBody.querySelector('video');
+                if (video) video.pause();
+            }
+        });
+
+        // Close modal saat klik di luar
+        previewModal.addEventListener('click', (e) => {
+            if (e.target === previewModal) {
+                previewModal.classList.remove('active');
+                const video = modalBody.querySelector('video');
+                if (video) video.pause();
+            }
+        });
+
+        // Auto-play video thumbnail on hover
+        document.addEventListener('mouseover', (e) => {
+            if (e.target.closest('.file-card')) {
+                const card = e.target.closest('.file-card');
+                const video = card.querySelector('video');
+                if (video && !previewModal.classList.contains('active')) {
+                    video.play().catch(() => {
+                        // Auto-play mungkin diblokir browser
+                    });
+                }
+            }
+        });
+
+        document.addEventListener('mouseout', (e) => {
+            if (e.target.closest('.file-card')) {
+                const card = e.target.closest('.file-card');
+                const video = card.querySelector('video');
+                if (video && !previewModal.classList.contains('active')) {
+                    video.pause();
+                    video.currentTime = 0;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
